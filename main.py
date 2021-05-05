@@ -1,140 +1,153 @@
 import pygame
+from pygame.locals import *
+from datetime import datetime, timedelta
 
 
-"""
-# plein ecran
-pygame.FULLSCREEN
-# cree une fenetre redimentionnable 
-pygame.RESIZABLE
-#enleve les frames de la fenetre
-pygame.NOFRAME
+from classes import *
+
+# initialisation de pygame
+pygame.display.init()
+
+# initialisation de la fenetre  nombre de sprite par cote * taille du sprite
 
 
-# rendue
-pygame.OPENGL
-# accélération materiel
-pygame.HWSURFACE
-# double memoire tampon pour les cinématiques surtous 
-pygame.DOUBLEBUF
-"""
-
-pygame.init()
-
-# Titre de la fenetre
+fenetre = pygame.display.set_mode((taillefenetre, taillefenetre))
 pygame.display.set_caption("Bomberman")
 
-# creation de la surface dans la fenetre python
-# set_mode = cree une surface avec en parametre la resolution de fenetr
-#peut -etre rapeller a tout moment pour changer les parametre 
-taillescreen = (640,480)
-screen_surface = pygame.display.set_mode(taillescreen, pygame.RESIZABLE)
-
-
-#afficher des infos dans le terminal 
+# afficher des infos dans le terminal 
 print(pygame.display.Info())
 
-# ferme la fenetre avec la croix en haut a droite  
-launched = True
+# variable de debut/fin de la boucle infinie
+launched = 1
+
+# boucle d'actualisation de la fenetre
 while launched:
 
-    # Creation ecran d'accueil
-    accueil_image = pygame.image.load(accueil_image).convert()
-    # superpose une image 
-    screen_surface.blit(accueil_image, (0, 0))
+    # chargement de l'accueil
+    accueil = pygame.image.load('images/image_accueil.png').convert()
+    fenetre.blit(accueil, (0, 0))
 
-    # rafraichie les données
+    # rafraichissement
     pygame.display.flip()
 
-    #activation des menus
-    fenetre_accueil = True
-    fenetre_controle = True
-    fenetre_jeu = True
-    fenetre_victoirej1 = False
-    fenetre_victoirej2 = False
+    launched_jeu = 1
+    launched_accueil = 1
+
+    # boucle d'accueil
+    while launched_accueil:
+
+        # limitation de vittesse de la boucle
+        pygame.time.Clock().tick(30)
+        start = 0
+
+        # evemements clavier du menu
+        for event in pygame.event.get():
+            # quitter le jeu
+            if event.type == QUIT or event.type == KEYDOWN and event.key == K_ESCAPE:
+                launched_accueil = 0
+                launched_jeu = 0
+                launched = 0
+            # lancer la jeu
+            elif event.type == KEYDOWN and event.key == K_SPACE:
+                launched_accueil = 0
+                start = "start"
+
+    # Vérification du choix du niveau
+    if start != 0:
     
-    while fenetre_accueil:
-        
-        
-        # limitation de vittesse a 30 image par sec
+
+        # generation du niveau à partir du fichier
+        niveau = Niveau("level.txt")
+        niveau.generer()
+        niveau.afficher(fenetre)
+
+        # création des deux avatars
+        perso = Perso("images/player1d.png", "images/player1g.png", "images/player1h.png", "images/player1b.png", niveau)
+        perso2 = Perso2("images/player2d.png", "images/player2g.png", "images/player2h.png", "images/player2b.png", niveau)
+        # création des deux bombes
+        bombe = Bomb("images/bombe.png", niveau, perso, perso2)
+        bombe2 = Bomb("images/bombe.png", niveau, perso, perso2)
+        # création des flammes
+        flamme = Flammes("images/explod.png", "images/explog.png", "images/exploh.png", "images/explob.png")
+
+    # boucle jeu
+    while launched_jeu:
+
+        # limitation de la vitesse
         pygame.time.Clock().tick(30)
         
-        start = "accueil"
 
+        # boucle evenement 
         for event in pygame.event.get():
-            # Quitter
-            if event.type == pygame.QUIT:
-                fenetre_accueil = False
-                fenetre_controle = False
-                fenetre_jeu = False
-                launched = False
-            # Lancer le jeu
-            elif event.key == K_SPACE:
-                fenetre_controle = False
-                fenetre_accueil = False
-                start = "play"
-            elif event.key == K_P:
-                fenetre_accueil = False
 
-    while fenetre_controle:
-        
-        if event.type == pygame.QUIT:
-            fenetre_controle = False
-            fenetre_jeu = False
-            launched = False
-        elif event.key == K_SPACE:
-                fenetre_accueil = True
-        controle_image = pygame.image.load(controle_image).convert()
-        screen_surface.blit(controle_image, (0, 0))
+            # quitter le jeu
+            if event.type == QUIT:
+                launched_jeu = 0
+                launched = 0
+            elif event.type == KEYDOWN:
+                # menu
+                if event.key == K_ESCAPE:
+                    launched_jeu = 0
+                # pose de la bombe
+                if event.key == K_SPACE:
+                    bombe.poser(perso.x, perso.y, "images/bombe.png")
 
-    # Vérification du lancement du jeu pour ne pas charger les parametre si le joueur quitte
-    #if start =="play":
+                # déplacement perso1
+                elif event.key == K_RIGHT:
+                    perso.deplacer("droite")
+                elif event.key == K_LEFT:
+                    perso.deplacer("gauche")
+                elif event.key == K_DOWN:
+                    perso.deplacer("bas")
+                elif event.key == K_UP:
+                    perso.deplacer("haut")
 
-        #entré ici les parametres de construction du niveau
-        #Tiled est utilisable 
-    
-    while fenetre_jeu:
-        if event.type == pygame.QUIT:
-            fenetre_jeu = False
-            launched = False
+                # déplacement perso2
 
-        #entré ici les parametres d'évenement du jeu 
-        
-        # conditions de victoire
+                if event.key == K_e:
+                    bombe2.poser(perso2.x, perso2.y, "images/bombe.png")
+                elif event.key == K_d:
+                    perso2.deplacer("droite")
+                elif event.key == K_q:
+                    perso2.deplacer("gauche")
+                elif event.key == K_s:
+                    perso2.deplacer("bas")
+                elif event.key == K_z:
+                    perso2.deplacer("haut")
+
+        # Affichages des nouvelles positions
+
+        niveau.afficher(fenetre)
+        fenetre.blit(perso.direction, (perso.x, perso.y))
+        fenetre.blit(perso2.direction, (perso2.x, perso2.y))
+        fenetre.blit(bombe.bomb, (bombe.x, bombe.y))
+        fenetre.blit(bombe2.bomb, (bombe2.x, bombe2.y))
+
+        # affichage explosion
+        if bombe.explosion == 1:
+            fenetre.blit(flamme.fflamme_b, (bombe.x, bombe.y + taille_sprite))
+            fenetre.blit(flamme.fflamme_h, (bombe.x, bombe.y - taille_sprite))
+            fenetre.blit(flamme.fflamme_g, (bombe.x - taille_sprite, bombe.y))
+            fenetre.blit(flamme.fflamme_d, (bombe.x + taille_sprite, bombe.y))
+
+        if bombe2.explosion == 1:
+            fenetre.blit(flamme.fflamme_b, (bombe2.x, bombe2.y + taille_sprite))
+            fenetre.blit(flamme.fflamme_h, (bombe2.x, bombe2.y - taille_sprite))
+            fenetre.blit(flamme.fflamme_g, (bombe2.x - taille_sprite, bombe2.y))
+            fenetre.blit(flamme.fflamme_d, (bombe2.x + taille_sprite, bombe2.y))
+
+        # affichage de la frame
+        pygame.display.flip()
+
+        # verification des conditions de victoire
+        game_over = bombe.exploser()
         if game_over == 1:
-            fenetre_jeu = False
-            fenetre_victoirej2 = True
-       
-        if game_over == 2:
-            fenetre_jeu = False
-            fenetre_victoirej1 = True
+            launched_jeu = 0
+            print("Joueur 2 win")
 
-    while fenetre_victoirej1:
-        vicoitej1_image = pygame.image.load(vicoitej1_image).convert()
-        screen_surface.blit(vicoitej1_image, (0, 0))
-         
-        if event.type == pygame.QUIT:
-            fenetre_victoirej1 = False
-            launched = False
-        # reLancer le jeu
-        elif event.key == K_SPACE:
-            fenetre_accueil = True
-            fenetre_controle = True
-            fenetre_jeu = True
-            fenetre_victoirej1 = False
-            fenetre_victoirej2 = False
-         
-    while fenetre_victoirej2:
-        vicoitej2_image = pygame.image.load(vicoitej2_image).convert()
-        screen_surface.blit(vicoitej2_image, (0, 0))
+        game_over = bombe2.exploser()
+        if game_over == 1:
+            launched_jeu = 0
+            print("Joueur 1 win")
 
-        if event.type == pygame.QUIT:
-            fenetre_victoirej2 = False
-            launched = False
-        # reLancer le jeu
-        elif event.key == K_SPACE:
-            fenetre_accueil = True
-            fenetre_controle = True
-            fenetre_jeu = True
-            fenetre_victoirej1 = False
-            fenetre_victoirej2 = False
-         
+      
