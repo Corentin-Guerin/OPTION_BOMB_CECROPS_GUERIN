@@ -233,7 +233,6 @@ class Bomb:
                     return 1
 
             except IndexError:
-            n
                 pass
 
         if timedelta(milliseconds=3500) <= datetime.now() - self._time_created:
